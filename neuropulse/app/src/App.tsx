@@ -1,6 +1,7 @@
 import './index.css'
 import { useStressData } from './hooks/useStressData'
 import { StressMeter } from './components/StressMeter'
+import { DemoControls } from './components/DemoControls'
 
 function App() {
   useStressData()
@@ -11,6 +12,7 @@ function App() {
         NeuroPulse
       </h1>
       <StressMeter />
+      <DemoControls />
     </main>
   )
 }
