@@ -204,3 +204,9 @@ async def get_episode_analysis(episode_id: int) -> dict:
         return result
     except ImportError:
         raise HTTPException(status_code=503, detail="episode_logger ещё не реализован")
+
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
