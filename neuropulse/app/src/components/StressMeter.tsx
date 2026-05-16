@@ -1,93 +1,110 @@
 import { motion } from 'framer-motion'
 import { useStressStore } from '../store/stressStore'
 
-function getColor(stress: number): string {
-  if (stress >= 90) return '#ef4444'   // красный
-  if (stress >= 70) return '#f97316'   // оранжевый
-  if (stress >= 40) return '#eab308'   // жёлтый
-  return '#22c55e'                      // зелёный
+function getStatus(stress: number): { label: string; bg: string; text: string; border: string } {
+  if (stress >= 90) return { label: 'КРИЗИС',     bg: 'bg-red-950',    text: 'text-red-400',    border: 'border-red-500' }
+  if (stress >= 70) return { label: 'ВЫСОКИЙ',    bg: 'bg-orange-950', text: 'text-orange-400', border: 'border-orange-500' }
+  if (stress >= 40) return { label: 'НАРАСТАНИЕ', bg: 'bg-yellow-950', text: 'text-yellow-400', border: 'border-yellow-500' }
+  return              { label: 'СПОКОЙНО',    bg: 'bg-emerald-950',text: 'text-emerald-400',border: 'border-emerald-500' }
 }
 
-function getLabel(stress: number): string {
-  if (stress >= 90) return 'КРИЗИС'
-  if (stress >= 70) return 'ВЫСОКИЙ'
-  if (stress >= 40) return 'УМЕРЕННЫЙ'
-  return 'СПОКОЙНО'
+function getStressColor(stress: number): string {
+  if (stress >= 90) return '#f87171'
+  if (stress >= 70) return '#fb923c'
+  if (stress >= 40) return '#facc15'
+  return '#34d399'
+}
+
+interface StatCardProps {
+  label: string
+  value: string
+  unit: string
+  icon: string
+  borderColor: string
+  valueColor?: string
+}
+
+function StatCard({ label, value, unit, icon, borderColor, valueColor = '#f1f5f9' }: StatCardProps) {
+  return (
+    <div
+      className="flex-1 rounded-xl p-4 flex flex-col gap-1 border"
+      style={{ background: '#1a1d27', borderColor }}
+    >
+      <div className="flex items-center gap-1.5">
+        <span className="text-base">{icon}</span>
+        <span className="text-xs uppercase tracking-wider" style={{ color: '#64748b' }}>{label}</span>
+      </div>
+      <div className="flex items-baseline gap-1 mt-1">
+        <span className="font-bold tabular-nums" style={{ fontSize: 48, lineHeight: 1, color: valueColor }}>
+          {value}
+        </span>
+        <span className="text-sm" style={{ color: '#94a3b8' }}>{unit}</span>
+      </div>
+    </div>
+  )
 }
 
 export function StressMeter() {
   const current = useStressStore((s) => s.current)
   const stress = current?.stress ?? 0
-  const bpm = current?.bpm ?? 0
-  const rmssd = current?.rmssd ?? 0
+  const bpm    = current?.bpm   ?? 0
+  const rmssd  = current?.rmssd ?? 0
   const source = current?.source ?? 'simulator'
 
-  const color = getColor(stress)
+  const status = getStatus(stress)
+  const stressColor = getStressColor(stress)
 
   return (
-    <div className="flex flex-col items-center gap-6 w-full max-w-xs mx-auto">
+    <div className="w-full flex flex-col gap-4">
 
-      {/* заголовок */}
-      <div className="text-center">
-        <motion.p
-          key={getLabel(stress)}
-          initial={{ opacity: 0, y: -4 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-sm font-semibold tracking-widest uppercase"
-          style={{ color }}
-        >
-          {getLabel(stress)}
-        </motion.p>
-        <motion.p
-          className="text-6xl font-bold tabular-nums mt-1"
-          style={{ color }}
-          animate={{ color }}
-          transition={{ duration: 0.6 }}
-        >
-          {stress}
-          <span className="text-2xl font-normal text-slate-400">%</span>
-        </motion.p>
-      </div>
+      {/* 1. Status banner */}
+      <motion.div
+        key={status.label}
+        initial={{ opacity: 0, y: -4 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={`w-full rounded-xl py-3 px-5 flex items-center justify-between border ${status.bg} ${status.border}`}
+      >
+        <span className={`text-sm font-bold tracking-widest uppercase ${status.text}`}>
+          {status.label}
+        </span>
+        <div className="flex items-center gap-2">
+          <span className={`w-2 h-2 rounded-full animate-pulse ${status.text.replace('text-', 'bg-')}`} />
+          <span className="text-xs" style={{ color: '#64748b' }}>СТРЕСС-МОНИТОР</span>
+        </div>
+      </motion.div>
 
-      {/* термометр */}
-      <div className="relative w-12 h-64 rounded-full bg-slate-800 overflow-hidden border border-slate-700">
-        <motion.div
-          className="absolute bottom-0 left-0 right-0 rounded-full"
-          style={{ backgroundColor: color }}
-          animate={{ height: `${stress}%`, backgroundColor: color }}
-          transition={{ duration: 0.8, ease: 'easeOut' }}
+      {/* 2. Metric cards */}
+      <div className="flex gap-3">
+        <StatCard
+          label="Стресс"
+          value={String(stress)}
+          unit="%"
+          icon="⚡"
+          borderColor={stressColor + '55'}
+          valueColor={stressColor}
         />
-        {/* зона-маркеры */}
-        {[40, 70, 90].map((mark) => (
-          <div
-            key={mark}
-            className="absolute left-0 right-0 border-t border-slate-600 border-dashed opacity-40"
-            style={{ bottom: `${mark}%` }}
-          />
-        ))}
+        <StatCard
+          label="BPM"
+          value={bpm.toFixed(0)}
+          unit="уд/мин"
+          icon="♥"
+          borderColor="#7c3aed55"
+        />
+        <StatCard
+          label="RMSSD"
+          value={rmssd.toFixed(1)}
+          unit="мс"
+          icon="〰"
+          borderColor="#0ea5e955"
+        />
       </div>
 
-      {/* биометрика */}
-      <div className="grid grid-cols-2 gap-4 w-full text-center">
-        <div className="bg-slate-800 rounded-xl p-3">
-          <p className="text-xs text-slate-400 uppercase tracking-wider">BPM</p>
-          <p className="text-2xl font-semibold text-slate-100 tabular-nums mt-1">
-            {bpm.toFixed(0)}
-          </p>
-        </div>
-        <div className="bg-slate-800 rounded-xl p-3">
-          <p className="text-xs text-slate-400 uppercase tracking-wider">RMSSD</p>
-          <p className="text-2xl font-semibold text-slate-100 tabular-nums mt-1">
-            {rmssd.toFixed(1)}
-            <span className="text-xs text-slate-400 ml-1">мс</span>
-          </p>
-        </div>
-      </div>
-
-      {/* источник данных */}
-      <div className="flex items-center gap-2">
-        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-        <span className="text-xs text-slate-500 uppercase tracking-wider">{source}</span>
+      {/* 3. Connection status */}
+      <div className="flex items-center gap-2 px-1">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+        <span className="text-xs uppercase tracking-widest" style={{ color: '#64748b' }}>
+          {source}
+        </span>
       </div>
     </div>
   )
