@@ -31,14 +31,14 @@ export function DemoControls() {
 
       {/* заголовок */}
       <div>
-        <p className="text-sm font-semibold text-white">Демо-управление</p>
-        <p className="text-xs mt-0.5" style={{ color: '#64748b' }}>Симуляция уровня стресса для презентации</p>
+        <p className="text-sm font-semibold text-white">Demo Controls</p>
+        <p className="text-xs mt-0.5" style={{ color: '#64748b' }}>Simulate stress levels for presentation</p>
       </div>
 
       {/* слайдер */}
       <div className="flex flex-col gap-3">
         <div className="flex justify-between items-center">
-          <span className="text-xs uppercase tracking-wider" style={{ color: '#64748b' }}>Уровень стресса</span>
+          <span className="text-xs uppercase tracking-wider" style={{ color: '#64748b' }}>Stress Level</span>
           <span className="text-sm font-bold tabular-nums text-white">{level}%</span>
         </div>
         <input
@@ -51,8 +51,8 @@ export function DemoControls() {
           style={{ accentColor: '#7c3aed', background: `linear-gradient(to right, #7c3aed ${level}%, #222638 ${level}%)` }}
         />
         <div className="flex justify-between text-xs" style={{ color: '#64748b' }}>
-          <span>Спокойно</span>
-          <span>Кризис</span>
+          <span>Calm</span>
+          <span>Crisis</span>
         </div>
       </div>
 
@@ -65,7 +65,7 @@ export function DemoControls() {
           className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           style={{ background: '#7c3aed' }}
         >
-          {scenario === 'rising' ? '⏳ Нарастает…' : '📈 Нарастание'}
+          {scenario === 'rising' ? '⏳ Rising…' : '📈 Rising Stress'}
         </motion.button>
 
         <motion.button
@@ -74,7 +74,7 @@ export function DemoControls() {
           className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors"
           style={{ background: '#222638', color: '#94a3b8' }}
         >
-          🔄 Сброс
+          🔄 Reset
         </motion.button>
       </div>
     </div>

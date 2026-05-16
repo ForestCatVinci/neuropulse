@@ -36,8 +36,8 @@ export function ParentDashboard() {
 
   const chartData = history.map((d, i) => ({ t: i, stress: d.stress, bpm: d.bpm }))
   const timeRange = history.length > 0
-    ? `последние ${history.length} сек`
-    : 'нет данных'
+    ? `last ${history.length} seconds`
+    : 'no data yet'
 
   return (
     <div className="w-full flex flex-col gap-6">
@@ -45,14 +45,14 @@ export function ParentDashboard() {
       {/* 1. Карточка с графиком */}
       <div className="w-full rounded-xl p-5 border" style={{ background: '#1a1d27', borderColor: '#222638' }}>
         <div className="mb-4">
-          <p className="text-sm font-semibold text-white">Уровень стресса</p>
+          <p className="text-sm font-semibold text-white">Stress Level</p>
           <p className="text-xs mt-0.5" style={{ color: '#64748b' }}>{timeRange}</p>
         </div>
 
         {history.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 gap-2">
             <span className="text-3xl opacity-30">📡</span>
-            <p className="text-sm" style={{ color: '#64748b' }}>Ожидание данных с сервера…</p>
+            <p className="text-sm" style={{ color: '#64748b' }}>Waiting for server data…</p>
           </div>
         ) : (
           <ResponsiveContainer width="100%" height={180}>
@@ -69,7 +69,7 @@ export function ParentDashboard() {
                 labelFormatter={() => ''}
                 formatter={(v) => {
                   if (v == null) return ['', '']
-                  return [`${Number(v)}%`, 'Стресс']
+                  return [`${Number(v)}%`, 'Stress']
                 }}
               />
               <ReferenceLine y={70} stroke="#fb923c" strokeDasharray="4 2" label={{ value: '70%', fill: '#fb923c', fontSize: 10, position: 'right' }} />
@@ -89,14 +89,14 @@ export function ParentDashboard() {
 
       {/* 2. Секция эпизодов */}
       <div className="w-full rounded-xl p-5 border" style={{ background: '#1a1d27', borderColor: '#222638' }}>
-        <p className="text-sm font-semibold text-white mb-4">Эпизоды</p>
+        <p className="text-sm font-semibold text-white mb-4">Episodes</p>
 
         {episodes.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 gap-3">
             <span className="text-4xl opacity-20">🫧</span>
-            <p className="text-sm font-medium" style={{ color: '#94a3b8' }}>Эпизодов пока нет</p>
+            <p className="text-sm font-medium" style={{ color: '#94a3b8' }}>No episodes yet</p>
             <p className="text-xs text-center max-w-xs" style={{ color: '#64748b' }}>
-              Эпизоды появятся когда уровень стресса превысит 90% и затем снизится
+              Episodes appear when stress exceeds 90% and then drops back down
             </p>
           </div>
         ) : (
@@ -108,9 +108,9 @@ export function ParentDashboard() {
                   <div className="flex gap-2 text-xs" style={{ color: '#64748b' }}>
                     <span>{ep.duration_sec}с</span>
                     <span>·</span>
-                    <span>пик {ep.peak_stress}%</span>
+                    <span>peak {ep.peak_stress}%</span>
                     <span>·</span>
-                    <span>{ep.avg_bpm.toFixed(0)} уд/мин</span>
+                    <span>{ep.avg_bpm.toFixed(0)} bpm</span>
                   </div>
                 </div>
                 {ep.analysis ? (
@@ -122,7 +122,7 @@ export function ParentDashboard() {
                     </span>
                   </div>
                 ) : (
-                  <p className="text-xs" style={{ color: '#64748b' }}>Анализ ожидается…</p>
+                  <p className="text-xs" style={{ color: '#64748b' }}>Analysis pending…</p>
                 )}
               </li>
             ))}

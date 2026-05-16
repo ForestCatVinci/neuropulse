@@ -36,7 +36,7 @@ export default function App() {
                 className="px-5 py-2.5 text-sm font-medium transition-colors relative"
                 style={{ color: tab === t ? '#a78bfa' : '#64748b' }}
               >
-                {t === 'monitor' ? '📡 Монитор' : '📊 Дашборд'}
+                {t === 'monitor' ? '📡 Monitor' : '📊 Dashboard'}
                 {tab === t && (
                   <span
                     className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t"

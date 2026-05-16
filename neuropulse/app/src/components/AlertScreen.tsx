@@ -34,7 +34,7 @@ export function AlertScreen() {
           >
             <span className="text-6xl">⚠️</span>
             <p className="text-red-300 text-2xl font-bold tracking-wider uppercase">
-              Перегрузка
+              Overload
             </p>
             <p className="text-red-400 text-5xl font-black tabular-nums">{stress}%</p>
           </motion.div>
@@ -62,7 +62,7 @@ export function AlertScreen() {
             onClick={dismissAlert}
             className="mt-4 text-red-400 text-sm underline underline-offset-4 hover:text-red-300 transition-colors"
           >
-            Закрыть (опекун)
+            Dismiss (caregiver)
           </button>
         </motion.div>
       )}

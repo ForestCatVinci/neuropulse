@@ -2,10 +2,10 @@ import { motion } from 'framer-motion'
 import { useStressStore } from '../store/stressStore'
 
 function getStatus(stress: number): { label: string; bg: string; text: string; border: string } {
-  if (stress >= 90) return { label: 'КРИЗИС',     bg: 'bg-red-950',    text: 'text-red-400',    border: 'border-red-500' }
-  if (stress >= 70) return { label: 'ВЫСОКИЙ',    bg: 'bg-orange-950', text: 'text-orange-400', border: 'border-orange-500' }
-  if (stress >= 40) return { label: 'НАРАСТАНИЕ', bg: 'bg-yellow-950', text: 'text-yellow-400', border: 'border-yellow-500' }
-  return              { label: 'СПОКОЙНО',    bg: 'bg-emerald-950',text: 'text-emerald-400',border: 'border-emerald-500' }
+  if (stress >= 90) return { label: 'CRISIS',    bg: 'bg-red-950',    text: 'text-red-400',    border: 'border-red-500' }
+  if (stress >= 70) return { label: 'HIGH',      bg: 'bg-orange-950', text: 'text-orange-400', border: 'border-orange-500' }
+  if (stress >= 40) return { label: 'ELEVATED',  bg: 'bg-yellow-950', text: 'text-yellow-400', border: 'border-yellow-500' }
+  return              { label: 'CALM',       bg: 'bg-emerald-950',text: 'text-emerald-400',border: 'border-emerald-500' }
 }
 
 function getStressColor(stress: number): string {
@@ -69,14 +69,14 @@ export function StressMeter() {
         </span>
         <div className="flex items-center gap-2">
           <span className={`w-2 h-2 rounded-full animate-pulse ${status.text.replace('text-', 'bg-')}`} />
-          <span className="text-xs" style={{ color: '#64748b' }}>СТРЕСС-МОНИТОР</span>
+          <span className="text-xs" style={{ color: '#64748b' }}>STRESS MONITOR</span>
         </div>
       </motion.div>
 
       {/* 2. Metric cards */}
       <div className="flex gap-3">
         <StatCard
-          label="Стресс"
+          label="Stress"
           value={String(stress)}
           unit="%"
           icon="⚡"
@@ -86,14 +86,14 @@ export function StressMeter() {
         <StatCard
           label="BPM"
           value={bpm.toFixed(0)}
-          unit="уд/мин"
+          unit="bpm"
           icon="♥"
           borderColor="#7c3aed55"
         />
         <StatCard
           label="RMSSD"
           value={rmssd.toFixed(1)}
-          unit="мс"
+          unit="ms"
           icon="〰"
           borderColor="#0ea5e955"
         />

@@ -1,9 +1,9 @@
 import { motion } from 'framer-motion'
 
 const BUTTONS = [
-  { emoji: '🔇', label: 'Тишина',    bg: 'bg-blue-600 hover:bg-blue-500' },
-  { emoji: '🏠', label: 'Домой',     bg: 'bg-emerald-600 hover:bg-emerald-500' },
-  { emoji: '🆘', label: 'Помогите',  bg: 'bg-red-600 hover:bg-red-500' },
+  { emoji: '🔇', label: 'Quiet',     bg: 'bg-blue-600 hover:bg-blue-500' },
+  { emoji: '🏠', label: 'Go Home',   bg: 'bg-emerald-600 hover:bg-emerald-500' },
+  { emoji: '🆘', label: 'Help',      bg: 'bg-red-600 hover:bg-red-500' },
 ]
 
 interface Props {
