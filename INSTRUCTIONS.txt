@@ -1,0 +1,123 @@
+You are building NeuroPulse — a hackathon MVP that predicts sensory overload for neurodiverse people (autism, Tourette's) using wearable biometric data.
+
+## Project overview
+A real-time stress monitoring system with 3 parts:
+1. Data source (simulator now, ESP32 + MAX30102 sensor later)
+2. Python FastAPI WebSocket server
+3. React + TypeScript frontend
+
+## Core user flow
+Sensor reads BPM + HRV → server calculates stress 0–100% → browser shows stress meter → at 70%+ yellow alert → at 90%+ red alert with non-verbal communication buttons (🔇 quiet / 🏠 go home / 🆘 help) → after episode OpenAI API generates trigger analysis → parent dashboard shows history and patterns
+
+## Tech stack
+Frontend: React 18 + Vite + TypeScript + Tailwind CSS + Zustand + Recharts + Framer Motion
+Backend: Python FastAPI + WebSocket + SQLite + python-dotenv
+AI: Anthropic Claude API (claude-sonnet-4-20250514) for episode analysis
+
+## Critical architecture decision: DataSource abstraction
+The data source is abstracted so switching from simulator to real device requires zero code changes — only .env change.
+
+DATA_SOURCE=simulator → uses SimulatorSource (generates realistic BPM/HRV)
+DATA_SOURCE=device    → uses DeviceSource (connects to ESP32 via WebSocket)
+
+## Stress calculation
+Uses RMSSD formula (standard HRV metric):
+- Collect RR intervals (time between heartbeats in ms)
+- RMSSD = sqrt(avg((RR[i] - RR[i-1])²))
+- High RMSSD (>50ms) = low stress
+- Low RMSSD (<20ms) = high stress
+- Also factor in BPM deviation from personal baseline
+
+## Project file structure to create
+neuropulse/
+├── server/
+│   ├── main.py                  # FastAPI + WebSocket hub, broadcast loop
+│   ├── stress_engine.py         # RMSSD + BPM → stress 0–100
+│   ├── episode_logger.py        # save episodes to SQLite
+│   ├── claude_client.py         # call Claude API for episode analysis
+│   ├── .env                     # DATA_SOURCE=simulator, ANTHROPIC_API_KEY=
+│   └── data_source/
+│       ├── __init__.py          # factory: reads .env, returns correct source
+│       ├── base.py              # abstract AsyncGenerator interface
+│       ├── simulator.py         # generates BPM/HRV with stress_level param
+│       └── device.py            # connects to ESP32 WebSocket ws://IP:81
+│
+└── app/
+    ├── src/
+    │   ├── App.tsx
+    │   ├── types/
+    │   │   └── stress.ts        # StressData, Episode interfaces
+    │   ├── hooks/
+    │   │   └── useStressData.ts # WebSocket hook → updates Zustand store
+    │   ├── store/
+    │   │   └── stressStore.ts   # Zustand: current stress, history, alerts
+    │   └── components/
+    │       ├── StressMeter.tsx       # animated 0–100% thermometer, color zones
+    │       ├── AlertScreen.tsx       # fullscreen alert at 90%+
+    │       ├── NonverbalButtons.tsx  # 3 big buttons: quiet/home/help
+    │       ├── ParentDashboard.tsx   # Recharts line chart, episode list
+    │       └── DemoControls.tsx      # slider to control simulator stress level
+    ├── package.json
+    └── vite.config.ts
+
+## Simulator behavior
+SimulatorSource must generate realistic data:
+- Base BPM: 68, rises to ~96 at full stress
+- HRV: base RMSSD ~45ms, drops to ~15ms at full stress  
+- Add breathing wave: sin(time) * 2
+- Add sensor noise: gaussian(0, 1.5)
+- stress_level param: 0.0 (calm) to 1.0 (crisis)
+- Expose set_stress(level) method for demo control from frontend
+
+## WebSocket message format (server → browser)
+{
+  "bpm": 75,
+  "stress": 42,
+  "rr_intervals": [980, 1020, 950, 1005, 990],
+  "rmssd": 28.5,
+  "source": "simulator" | "device",
+  "alert": false
+}
+
+## REST endpoints needed
+POST /demo/stress/{level}     — set simulator stress (0.0–1.0)
+POST /demo/scenario/rising    — auto-run: stress rises 0→1 over 30 seconds
+POST /demo/scenario/reset     — reset to calm
+GET  /episodes                — return last 20 episodes from SQLite
+GET  /episodes/{id}/analysis  — get Claude AI analysis for episode
+
+## Claude API usage (episode analysis)
+After stress drops from 90%+, call Claude API with:
+- Episode duration, peak stress, average BPM
+- Time of day, day of week
+- Ask for: likely trigger, recommendation, risk level
+Return structured JSON: { trigger, recommendation, risk_level }
+
+## UI design requirements
+- Dark-friendly, calm colors (no harsh whites)
+- Stress meter: green (0–40%) → yellow (40–70%) → orange (70–90%) → red (90–100%)
+- Alert screen: large clear buttons, minimal text (user may be non-verbal)
+- All animations smooth (Framer Motion), respect prefers-reduced-motion
+- Mobile-first layout (used on phone/tablet by caregiver)
+
+## What to build first (priority order)
+1. server/data_source/ (base, simulator, __init__)
+2. server/stress_engine.py
+3. server/main.py (WebSocket broadcast)
+4. app/src/types/stress.ts
+5. app/src/hooks/useStressData.ts
+6. app/src/store/stressStore.ts
+7. app/src/components/StressMeter.tsx
+8. app/src/components/DemoControls.tsx
+9. app/src/components/AlertScreen.tsx + NonverbalButtons.tsx
+10. app/src/components/ParentDashboard.tsx
+11. server/episode_logger.py + claude_client.py
+
+## Important constraints
+- No real device available yet — simulator must work perfectly standalone
+- Demo scenario (rising stress) must be triggerable from UI for presentation
+- All code must be clean enough to inspect and understand quickly
+- Comments in Russian are fine
+- When ESP32 arrives, ONLY change DATA_SOURCE=device in .env — nothing else
+
+Start by creating the full project structure, then implement in priority order. Ask me before making any architectural decisions not covered above.
