@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react'
 import { useStressStore } from '../store/stressStore'
 import type { StressData } from '../types/stress'
+import { WS_BASE } from '../config'
 
-const WS_URL = 'ws://localhost:8000/ws'
+const WS_URL = `${WS_BASE}/ws`
 const RECONNECT_DELAY_MS = 3000
 
 export function useStressData(): void {

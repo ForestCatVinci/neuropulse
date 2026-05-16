@@ -5,6 +5,7 @@ import {
 } from 'recharts'
 import { useStressStore } from '../store/stressStore'
 import type { Episode } from '../types/stress'
+import { HTTP_BASE } from '../config'
 
 function riskColor(level: NonNullable<Episode['analysis']>['risk_level']): string {
   if (level === 'high') return 'text-red-400'
@@ -28,7 +29,7 @@ export function ParentDashboard() {
   const setEpisodes = useStressStore((s) => s.setEpisodes)
 
   useEffect(() => {
-    fetch('/episodes')
+    fetch(`${HTTP_BASE}/episodes`)
       .then((r) => r.json())
       .then(setEpisodes)
       .catch(() => {})

@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { HTTP_BASE } from '../config'
 
-async function post(url: string) {
-  await fetch(url, { method: 'POST' })
+async function post(path: string) {
+  await fetch(`${HTTP_BASE}${path}`, { method: 'POST' })
 }
 
 export function DemoControls() {
