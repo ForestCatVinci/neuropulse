@@ -27,19 +27,30 @@ export function DemoControls() {
   }
 
   return (
-    <div className="w-full rounded-xl p-5 flex flex-col gap-5 border" style={{ background: '#1a1d27', borderColor: '#222638' }}>
-
-      {/* заголовок */}
+    <div style={{
+      width: '100%',
+      background: '#1a1d27',
+      borderRadius: 12,
+      padding: 24,
+      border: '1px solid #222638',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 20,
+    }}>
       <div>
-        <p className="text-sm font-semibold text-white">Demo Controls</p>
-        <p className="text-xs mt-0.5" style={{ color: '#64748b' }}>Simulate stress levels for presentation</p>
+        <p style={{ fontSize: 15, fontWeight: 600, color: '#fff' }}>Demo Controls</p>
+        <p style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Simulate stress levels for presentation</p>
       </div>
 
-      {/* слайдер */}
-      <div className="flex flex-col gap-3">
-        <div className="flex justify-between items-center">
-          <span className="text-xs uppercase tracking-wider" style={{ color: '#64748b' }}>Stress Level</span>
-          <span className="text-sm font-bold tabular-nums text-white">{level}%</span>
+      {/* slider */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748b' }}>
+            Stress Level
+          </span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>
+            {level}%
+          </span>
         </div>
         <input
           type="range"
@@ -47,23 +58,38 @@ export function DemoControls() {
           max={100}
           value={level}
           onChange={(e) => handleSlider(Number(e.target.value))}
-          className="w-full h-2 rounded-full cursor-pointer appearance-none"
-          style={{ accentColor: '#7c3aed', background: `linear-gradient(to right, #7c3aed ${level}%, #222638 ${level}%)` }}
+          style={{
+            width: '100%',
+            accentColor: '#7c3aed',
+            cursor: 'pointer',
+            height: 6,
+          }}
         />
-        <div className="flex justify-between text-xs" style={{ color: '#64748b' }}>
-          <span>Calm</span>
-          <span>Crisis</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 12, color: '#64748b' }}>Calm</span>
+          <span style={{ fontSize: 12, color: '#64748b' }}>Crisis</span>
         </div>
       </div>
 
-      {/* кнопки сценариев */}
-      <div className="flex gap-3">
+      {/* buttons */}
+      <div style={{ display: 'flex', gap: 12 }}>
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={handleRising}
           disabled={scenario === 'rising'}
-          className="flex-1 py-2.5 rounded-lg text-sm font-semibold text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{ background: '#7c3aed' }}
+          style={{
+            flex: 1,
+            height: 44,
+            borderRadius: 8,
+            fontSize: 14,
+            fontWeight: 600,
+            color: '#fff',
+            background: '#7c3aed',
+            border: 'none',
+            cursor: scenario === 'rising' ? 'not-allowed' : 'pointer',
+            opacity: scenario === 'rising' ? 0.5 : 1,
+            transition: 'opacity 0.2s',
+          }}
         >
           {scenario === 'rising' ? '⏳ Rising…' : '📈 Rising Stress'}
         </motion.button>
@@ -71,8 +97,17 @@ export function DemoControls() {
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={handleReset}
-          className="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors"
-          style={{ background: '#222638', color: '#94a3b8' }}
+          style={{
+            flex: 1,
+            height: 44,
+            borderRadius: 8,
+            fontSize: 14,
+            fontWeight: 600,
+            color: '#94a3b8',
+            background: '#222638',
+            border: 'none',
+            cursor: 'pointer',
+          }}
         >
           🔄 Reset
         </motion.button>

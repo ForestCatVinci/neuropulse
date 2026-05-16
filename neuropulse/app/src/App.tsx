@@ -14,51 +14,57 @@ export default function App() {
 
   return (
     <>
-      <div className="min-h-dvh" style={{ background: '#0f1117' }}>
-        <div className="w-full max-w-4xl mx-auto px-4 py-6 flex flex-col gap-6">
+      <div style={{ width: '100%', minHeight: '100vh', background: '#0f1117' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px' }}>
 
-          {/* шапка */}
-          <div className="flex items-center justify-between">
-            <h1 className="text-lg font-bold tracking-widest uppercase text-white">
+          {/* header */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: 24, paddingBottom: 24 }}>
+            <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#fff' }}>
               NeuroPulse
             </h1>
-            <span className="text-xs px-2 py-1 rounded" style={{ background: '#1a1d27', color: '#64748b' }}>
+            <span style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, background: '#1a1d27', color: '#64748b', letterSpacing: '0.08em' }}>
               MVP
             </span>
           </div>
 
-          {/* вкладки */}
-          <div className="flex border-b" style={{ borderColor: '#222638' }}>
+          {/* tabs */}
+          <div style={{ display: 'flex', borderBottom: '1px solid #222638', marginBottom: 24 }}>
             {(['monitor', 'dashboard'] as Tab[]).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
-                className="px-5 py-2.5 text-sm font-medium transition-colors relative"
-                style={{ color: tab === t ? '#a78bfa' : '#64748b' }}
+                style={{
+                  padding: '10px 20px',
+                  fontSize: 14,
+                  fontWeight: 500,
+                  border: 'none',
+                  cursor: 'pointer',
+                  borderRadius: '6px 6px 0 0',
+                  background: tab === t ? '#7c3aed' : 'transparent',
+                  color: tab === t ? '#fff' : '#64748b',
+                  transition: 'background 0.2s, color 0.2s',
+                  marginRight: 4,
+                }}
               >
                 {t === 'monitor' ? '📡 Monitor' : '📊 Dashboard'}
-                {tab === t && (
-                  <span
-                    className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t"
-                    style={{ background: '#7c3aed' }}
-                  />
-                )}
               </button>
             ))}
           </div>
 
-          {/* содержимое вкладки */}
-          {tab === 'monitor' ? (
-            <>
-              <StressMeter />
-              <DemoControls />
-            </>
-          ) : (
-            <ParentDashboard />
-          )}
+          {/* tab content */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 24, paddingBottom: 48 }}>
+            {tab === 'monitor' ? (
+              <>
+                <StressMeter />
+                <DemoControls />
+              </>
+            ) : (
+              <ParentDashboard />
+            )}
+          </div>
+
         </div>
       </div>
-
       <AlertScreen />
     </>
   )
