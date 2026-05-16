@@ -6,7 +6,7 @@ import {
 import { useStressStore } from '../store/stressStore'
 import type { Episode } from '../types/stress'
 
-function riskColor(level: Episode['analysis']['risk_level']): string {
+function riskColor(level: NonNullable<Episode['analysis']>['risk_level']): string {
   if (level === 'high') return 'text-red-400'
   if (level === 'medium') return 'text-yellow-400'
   return 'text-emerald-400'
@@ -46,7 +46,10 @@ export function ParentDashboard() {
             <Tooltip
               contentStyle={{ background: '#1e293b', border: 'none', borderRadius: 8 }}
               labelFormatter={() => ''}
-              formatter={(v: number) => [`${v}%`, 'Стресс']}
+              formatter={(v) => {
+                if (v == null) return ['', ''];
+                return [`${Number(v)}%`, 'Стресс'];
+              }}
             />
             <ReferenceLine y={70} stroke="#f97316" strokeDasharray="4 2" />
             <ReferenceLine y={90} stroke="#ef4444" strokeDasharray="4 2" />
