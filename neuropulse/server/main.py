@@ -5,7 +5,8 @@ from contextlib import asynccontextmanager
 from typing import Any
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
+from fastapi.responses import Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from data_source import create_data_source, SimulatorSource
@@ -111,15 +112,25 @@ app = FastAPI(title="NeuroPulse", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://neuropulse-niiv.vercel.app",
-        "http://localhost:5173",
-        "http://localhost:3000",
-    ],
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization"],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+    allow_credentials=False,
 )
+
+
+# ── explicit OPTIONS preflight for all routes ────────────────────────────────
+
+@app.options("/{rest_of_path:path}")
+async def preflight(rest_of_path: str, request: Request) -> Response:
+    return Response(
+        status_code=200,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization",
+        },
+    )
 
 
 # ── WebSocket endpoint ───────────────────────────────────────────────────────
