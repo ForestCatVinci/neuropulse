@@ -1,9 +1,10 @@
-const backendUrl = import.meta.env.VITE_BACKEND_URL as string | undefined
+const RAILWAY_URL = 'neuropulse-production.up.railway.app'
 
-// HTTP base: empty string = relative (Vite proxy in dev), full URL in prod
-export const HTTP_BASE = backendUrl ? `https://${backendUrl}` : ''
+// In production (Vercel build) use Railway; in dev use Vite proxy / localhost
+export const HTTP_BASE = import.meta.env.PROD
+  ? `https://${RAILWAY_URL}`
+  : ''
 
-// WebSocket base
-export const WS_BASE = backendUrl
-  ? `wss://${backendUrl}`
+export const WS_BASE = import.meta.env.PROD
+  ? `wss://${RAILWAY_URL}`
   : 'ws://localhost:8000'
