@@ -111,9 +111,14 @@ app = FastAPI(title="NeuroPulse", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=[
+        "https://neuropulse-niiv.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:3000",
+    ],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
+    allow_credentials=True,
 )
 
 
