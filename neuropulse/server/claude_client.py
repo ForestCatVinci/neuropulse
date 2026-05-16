@@ -1,8 +1,8 @@
 import json
 import os
-from anthropic import AsyncAnthropic
+from openai import AsyncOpenAI
 
-client = AsyncAnthropic(api_key=os.environ.get("ANTHROPIC_API_KEY", ""))
+client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY", ""))
 
 SYSTEM = """You are a neurodiversity specialist. Analyze sensory overload episodes for people with autism or Tourette's.
 Respond ONLY with valid JSON, no markdown.
@@ -19,13 +19,15 @@ async def analyze_episode(episode: dict) -> dict | None:
             f"- Started: {episode.get('start_time')}\n"
             "Identify likely trigger, give caregiver recommendation, assess recurrence risk."
         )
-        response = await client.messages.create(
-            model="claude-sonnet-4-20250514",
+        response = await client.chat.completions.create(
+            model="gpt-4o-mini",
             max_tokens=256,
-            messages=[{"role": "user", "content": msg}],
-            system=SYSTEM,
+            messages=[
+                {"role": "system", "content": SYSTEM},
+                {"role": "user", "content": msg},
+            ],
         )
-        return json.loads(response.content[0].text.strip())
+        return json.loads(response.choices[0].message.content.strip())
     except Exception as e:
-        print(f"[claude_client] analysis failed: {e}")
+        print(f"[ai_client] analysis failed: {e}")
         return None
