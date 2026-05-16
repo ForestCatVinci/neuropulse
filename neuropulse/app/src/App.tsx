@@ -1,10 +1,16 @@
 import './index.css'
+import { useStressData } from './hooks/useStressData'
+import { StressMeter } from './components/StressMeter'
 
 function App() {
+  useStressData()
+
   return (
-    <main className="flex flex-col items-center justify-center min-h-dvh p-4">
-      <h1 className="text-2xl font-semibold text-slate-200">NeuroPulse</h1>
-      <p className="text-slate-500 mt-2">Компоненты появятся в следующих шагах</p>
+    <main className="flex flex-col items-center justify-center min-h-dvh p-6 gap-8">
+      <h1 className="text-xl font-semibold text-slate-300 tracking-widest uppercase">
+        NeuroPulse
+      </h1>
+      <StressMeter />
     </main>
   )
 }
