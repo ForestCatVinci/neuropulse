@@ -1,9 +1,9 @@
 import { motion } from 'framer-motion'
 
 const BUTTONS = [
-  { emoji: '🔇', label: 'Quiet',     bg: 'bg-blue-600 hover:bg-blue-500' },
-  { emoji: '🏠', label: 'Go Home',   bg: 'bg-emerald-600 hover:bg-emerald-500' },
-  { emoji: '🆘', label: 'Help',      bg: 'bg-red-600 hover:bg-red-500' },
+  { emoji: '🔇', label: 'Quiet',   color: '#2563eb' },
+  { emoji: '🏠', label: 'Go Home', color: '#16a34a' },
+  { emoji: '🆘', label: 'Help',    color: '#dc2626' },
 ]
 
 interface Props {
@@ -12,17 +12,30 @@ interface Props {
 
 export function NonverbalButtons({ onPress }: Props) {
   return (
-    <div className="grid grid-cols-3 gap-4 w-full max-w-sm">
-      {BUTTONS.map(({ emoji, label, bg }) => (
+    <div className="grid grid-cols-3 gap-4 w-full max-w-md">
+      {BUTTONS.map(({ emoji, label, color }) => (
         <motion.button
           key={label}
           whileTap={{ scale: 0.92 }}
           whileHover={{ scale: 1.04 }}
           onClick={() => onPress(label)}
-          className={`${bg} rounded-2xl flex flex-col items-center justify-center gap-2 py-6 text-white transition-colors`}
+          style={{
+            minHeight: 120,
+            minWidth: 120,
+            background: color,
+            borderRadius: 16,
+            border: 'none',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            color: '#fff',
+          }}
         >
-          <span className="text-4xl">{emoji}</span>
-          <span className="text-sm font-semibold tracking-wide">{label}</span>
+          <span style={{ fontSize: 40 }}>{emoji}</span>
+          <span style={{ fontSize: 14, fontWeight: 600 }}>{label}</span>
         </motion.button>
       ))}
     </div>

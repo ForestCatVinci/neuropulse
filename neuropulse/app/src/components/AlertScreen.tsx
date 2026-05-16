@@ -4,45 +4,48 @@ import { useStressStore } from '../store/stressStore'
 import { NonverbalButtons } from './NonverbalButtons'
 
 export function AlertScreen() {
-  const alertActive = useStressStore((s) => s.alertActive)
-  const dismissAlert = useStressStore((s) => s.dismissAlert)
+  const isAlert = useStressStore((s) => s.isAlert)
+  const clearAlert = useStressStore((s) => s.clearAlert)
   const stress = useStressStore((s) => s.current?.stress ?? 0)
   const [pressed, setPressed] = useState<string | null>(null)
 
   const handlePress = (label: string) => {
     setPressed(label)
-    // сбрасываем подтверждение через 2 секунды
     setTimeout(() => setPressed(null), 2000)
   }
 
   return (
     <AnimatePresence>
-      {alertActive && (
+      {isAlert && (
         <motion.div
           key="alert"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
-          className="fixed inset-0 z-50 bg-red-950/95 flex flex-col items-center justify-center gap-8 p-6"
+          style={{
+            position: 'fixed', inset: 0, zIndex: 50,
+            background: 'rgba(69,10,10,0.97)',
+            display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', gap: 32, padding: 24,
+          }}
         >
-          {/* пульсирующий индикатор */}
           <motion.div
             animate={{ scale: [1, 1.08, 1] }}
-            transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}
-            className="flex flex-col items-center gap-2"
+            transition={{ repeat: Infinity, duration: 1.4 }}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}
           >
-            <span className="text-6xl">⚠️</span>
-            <p className="text-red-300 text-2xl font-bold tracking-wider uppercase">
-              Overload
+            <span style={{ fontSize: 64 }}>⚠️</span>
+            <p style={{ color: '#fca5a5', fontSize: 28, fontWeight: 700, letterSpacing: '0.1em' }}>
+              HIGH STRESS
             </p>
-            <p className="text-red-400 text-5xl font-black tabular-nums">{stress}%</p>
+            <p style={{ color: '#f87171', fontSize: 56, fontWeight: 900, fontVariantNumeric: 'tabular-nums' }}>
+              {stress}%
+            </p>
           </motion.div>
 
-          {/* кнопки невербальной коммуникации */}
           <NonverbalButtons onPress={handlePress} />
 
-          {/* подтверждение нажатия */}
           <AnimatePresence>
             {pressed && (
               <motion.p
@@ -50,17 +53,20 @@ export function AlertScreen() {
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                className="text-white text-lg font-semibold"
+                style={{ color: '#fff', fontSize: 18, fontWeight: 600 }}
               >
                 ✓ {pressed}
               </motion.p>
             )}
           </AnimatePresence>
 
-          {/* кнопка для опекуна */}
           <button
-            onClick={dismissAlert}
-            className="mt-4 text-red-400 text-sm underline underline-offset-4 hover:text-red-300 transition-colors"
+            onClick={clearAlert}
+            style={{
+              marginTop: 8, color: '#f87171', fontSize: 14,
+              background: 'none', border: 'none', cursor: 'pointer',
+              textDecoration: 'underline',
+            }}
           >
             Dismiss (caregiver)
           </button>

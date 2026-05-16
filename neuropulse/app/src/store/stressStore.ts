@@ -1,33 +1,36 @@
 import { create } from 'zustand'
 import type { StressData, Episode } from '../types/stress'
 
-const HISTORY_LIMIT = 60  // последние 60 секунд
+const HISTORY_LIMIT = 300
 
 interface StressStore {
   current: StressData | null
   history: StressData[]
-  alertActive: boolean
   episodes: Episode[]
+  isAlert: boolean
+  alertStartTime: number | null
 
-  pushReading: (data: StressData) => void
+  setStressData: (data: StressData) => void
   setEpisodes: (episodes: Episode[]) => void
-  dismissAlert: () => void
+  clearAlert: () => void
 }
 
 export const useStressStore = create<StressStore>((set) => ({
   current: null,
   history: [],
-  alertActive: false,
   episodes: [],
+  isAlert: false,
+  alertStartTime: null,
 
-  pushReading: (data) =>
+  setStressData: (data) =>
     set((state) => ({
       current: data,
-      alertActive: data.alert,
+      isAlert: data.alert,
+      alertStartTime: data.alert && !state.isAlert ? Date.now() : state.alertStartTime,
       history: [...state.history, data].slice(-HISTORY_LIMIT),
     })),
 
   setEpisodes: (episodes) => set({ episodes }),
 
-  dismissAlert: () => set({ alertActive: false }),
+  clearAlert: () => set({ isAlert: false, alertStartTime: null }),
 }))

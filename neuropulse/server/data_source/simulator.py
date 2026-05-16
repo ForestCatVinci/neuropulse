@@ -1,30 +1,24 @@
 import asyncio
 import math
 import random
+from dataclasses import dataclass
 from typing import AsyncGenerator
 
-from .base import DataSource, SensorReading
+
+@dataclass
+class BiometricData:
+    bpm: float
+    rr_intervals: list[float]
 
 
-class SimulatorSource(DataSource):
-    """
-    Генерирует реалистичные BPM/HRV данные.
-    stress_level: 0.0 (спокойно) → 1.0 (кризис)
-    """
-
-    BASE_BPM = 68
-    MAX_BPM = 96
-    BASE_RMSSD = 45.0  # мс
-    MIN_RMSSD = 15.0   # мс
-    INTERVAL_SEC = 1.0
-
+class SimulatorSource:
     def __init__(self) -> None:
-        self._stress_level: float = 0.0
-        self._running = False
+        self._stress = 0.0
         self._t = 0.0
+        self._running = False
 
     def set_stress(self, level: float) -> None:
-        self._stress_level = max(0.0, min(1.0, level))
+        self._stress = max(0.0, min(1.0, level))
 
     async def start(self) -> None:
         self._running = True
@@ -32,33 +26,16 @@ class SimulatorSource(DataSource):
     async def stop(self) -> None:
         self._running = False
 
-    async def stream(self) -> AsyncGenerator[SensorReading, None]:
+    async def stream(self) -> AsyncGenerator[BiometricData, None]:
         while self._running:
             yield self._generate()
-            self._t += self.INTERVAL_SEC
-            await asyncio.sleep(self.INTERVAL_SEC)
+            self._t += 1.0
+            await asyncio.sleep(1.0)
 
-    def _generate(self) -> SensorReading:
-        s = self._stress_level
-
-        # BPM: базовый + стресс-подъём + дыхательная волна + шум
-        bpm = (
-            self.BASE_BPM
-            + (self.MAX_BPM - self.BASE_BPM) * s
-            + math.sin(self._t * 0.2) * 2
-            + random.gauss(0, 1.5)
-        )
-
-        # Целевой RMSSD снижается при стрессе
-        target_rmssd = self.BASE_RMSSD + (self.MIN_RMSSD - self.BASE_RMSSD) * s
-
-        # Базовый RR-интервал из BPM
+    def _generate(self) -> BiometricData:
+        s = self._stress
+        bpm = 68 + s * 28 + math.sin(self._t * 0.3) * 2 + random.gauss(0, 1.5)
+        rmssd = max(5.0, 45 - s * 30 + random.gauss(0, 2))
         base_rr = 60_000 / bpm
-
-        # Генерируем 5 RR-интервалов с вариабельностью, соответствующей RMSSD
-        rr_intervals = [
-            base_rr + random.gauss(0, target_rmssd * 0.7)
-            for _ in range(5)
-        ]
-
-        return SensorReading(bpm=round(bpm, 1), rr_intervals=rr_intervals)
+        rr = [max(300.0, base_rr + random.gauss(0, rmssd * 0.6)) for _ in range(6)]
+        return BiometricData(bpm=round(bpm, 1), rr_intervals=rr)

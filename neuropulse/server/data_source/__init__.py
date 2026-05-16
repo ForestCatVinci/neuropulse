@@ -1,22 +1,25 @@
 import os
-
 from dotenv import load_dotenv
-
-from .base import DataSource, SensorReading
-from .simulator import SimulatorSource
+from .simulator import SimulatorSource, BiometricData
 from .device import DeviceSource
 
 load_dotenv()
 
-
-def create_data_source() -> DataSource:
-    source = os.getenv("DATA_SOURCE", "simulator").lower()
-    if source == "simulator":
-        return SimulatorSource()
-    if source == "device":
-        url = os.getenv("DEVICE_WS_URL", "ws://192.168.1.100:81")
-        return DeviceSource(url)
-    raise ValueError(f"Неизвестный DATA_SOURCE: {source!r}. Допустимые: simulator, device")
+_instance: SimulatorSource | DeviceSource | None = None
 
 
-__all__ = ["create_data_source", "DataSource", "SensorReading", "SimulatorSource", "DeviceSource"]
+def get_data_source() -> SimulatorSource | DeviceSource:
+    global _instance
+    if _instance is None:
+        source = os.getenv("DATA_SOURCE", "simulator").lower()
+        if source == "simulator":
+            _instance = SimulatorSource()
+        elif source == "device":
+            url = os.getenv("DEVICE_WS_URL", "ws://192.168.1.100:81")
+            _instance = DeviceSource(url)
+        else:
+            raise ValueError(f"Unknown DATA_SOURCE: {source!r}")
+    return _instance
+
+
+__all__ = ["get_data_source", "SimulatorSource", "DeviceSource", "BiometricData"]

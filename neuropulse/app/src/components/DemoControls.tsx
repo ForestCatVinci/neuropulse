@@ -1,18 +1,22 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { HTTP_BASE } from '../config'
+import { API_URL } from '../config'
 
 async function post(path: string) {
-  await fetch(`${HTTP_BASE}${path}`, { method: 'POST' })
+  await fetch(`${API_URL}${path}`, { method: 'POST' })
 }
 
 export function DemoControls() {
   const [level, setLevel] = useState(0)
   const [scenario, setScenario] = useState<string | null>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const handleSlider = async (value: number) => {
+  const handleSlider = (value: number) => {
     setLevel(value)
-    await post(`/demo/stress/${(value / 100).toFixed(2)}`)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      post(`/demo/stress/${(value / 100).toFixed(2)}`)
+    }, 200)
   }
 
   const handleRising = async () => {
@@ -43,7 +47,6 @@ export function DemoControls() {
         <p style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Simulate stress levels for presentation</p>
       </div>
 
-      {/* slider */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#64748b' }}>
@@ -59,12 +62,7 @@ export function DemoControls() {
           max={100}
           value={level}
           onChange={(e) => handleSlider(Number(e.target.value))}
-          style={{
-            width: '100%',
-            accentColor: '#7c3aed',
-            cursor: 'pointer',
-            height: 6,
-          }}
+          style={{ width: '100%', accentColor: '#7c3aed', cursor: 'pointer', height: 6 }}
         />
         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 12, color: '#64748b' }}>Calm</span>
@@ -72,24 +70,16 @@ export function DemoControls() {
         </div>
       </div>
 
-      {/* buttons */}
       <div style={{ display: 'flex', gap: 12 }}>
         <motion.button
           whileTap={{ scale: 0.97 }}
           onClick={handleRising}
           disabled={scenario === 'rising'}
           style={{
-            flex: 1,
-            height: 44,
-            borderRadius: 8,
-            fontSize: 14,
-            fontWeight: 600,
-            color: '#fff',
-            background: '#7c3aed',
-            border: 'none',
+            flex: 1, minHeight: 44, borderRadius: 8, fontSize: 14, fontWeight: 600,
+            color: '#fff', background: '#7c3aed', border: 'none',
             cursor: scenario === 'rising' ? 'not-allowed' : 'pointer',
-            opacity: scenario === 'rising' ? 0.5 : 1,
-            transition: 'opacity 0.2s',
+            opacity: scenario === 'rising' ? 0.5 : 1, transition: 'opacity 0.2s',
           }}
         >
           {scenario === 'rising' ? '⏳ Rising…' : '📈 Rising Stress'}
@@ -99,15 +89,8 @@ export function DemoControls() {
           whileTap={{ scale: 0.97 }}
           onClick={handleReset}
           style={{
-            flex: 1,
-            height: 44,
-            borderRadius: 8,
-            fontSize: 14,
-            fontWeight: 600,
-            color: '#94a3b8',
-            background: '#222638',
-            border: 'none',
-            cursor: 'pointer',
+            flex: 1, minHeight: 44, borderRadius: 8, fontSize: 14, fontWeight: 600,
+            color: '#94a3b8', background: '#222638', border: 'none', cursor: 'pointer',
           }}
         >
           🔄 Reset

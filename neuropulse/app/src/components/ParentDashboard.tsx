@@ -5,7 +5,7 @@ import {
 } from 'recharts'
 import { useStressStore } from '../store/stressStore'
 import type { Episode } from '../types/stress'
-import { HTTP_BASE } from '../config'
+import { API_URL } from '../config'
 
 function riskColor(level: NonNullable<Episode['analysis']>['risk_level']): string {
   if (level === 'high') return 'text-red-400'
@@ -20,30 +20,27 @@ function riskBadgeBg(level: NonNullable<Episode['analysis']>['risk_level']): str
 }
 
 function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+  return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 }
 
 export function ParentDashboard() {
-  const history    = useStressStore((s) => s.history)
-  const episodes   = useStressStore((s) => s.episodes)
+  const history     = useStressStore((s) => s.history)
+  const episodes    = useStressStore((s) => s.episodes)
   const setEpisodes = useStressStore((s) => s.setEpisodes)
 
   useEffect(() => {
-    fetch(`${HTTP_BASE}/episodes`)
+    fetch(`${API_URL}/episodes`)
       .then((r) => r.json())
       .then(setEpisodes)
       .catch(() => {})
   }, [setEpisodes])
 
   const chartData = history.map((d, i) => ({ t: i, stress: d.stress, bpm: d.bpm }))
-  const timeRange = history.length > 0
-    ? `last ${history.length} seconds`
-    : 'no data yet'
+  const timeRange = history.length > 0 ? `last ${history.length} seconds` : 'no data yet'
 
   return (
     <div className="w-full flex flex-col gap-6">
 
-      {/* 1. Карточка с графиком */}
       <div className="w-full rounded-xl p-5 border" style={{ background: '#1a1d27', borderColor: '#222638' }}>
         <div className="mb-4">
           <p className="text-sm font-semibold text-white">Stress Level</p>
@@ -73,22 +70,19 @@ export function ParentDashboard() {
                   return [`${Number(v)}%`, 'Stress']
                 }}
               />
-              <ReferenceLine y={70} stroke="#fb923c" strokeDasharray="4 2" label={{ value: '70%', fill: '#fb923c', fontSize: 10, position: 'right' }} />
-              <ReferenceLine y={90} stroke="#f87171" strokeDasharray="4 2" label={{ value: '90%', fill: '#f87171', fontSize: 10, position: 'right' }} />
+              <ReferenceLine y={70} stroke="#fb923c" strokeDasharray="4 2"
+                label={{ value: '70%', fill: '#fb923c', fontSize: 10, position: 'right' }} />
+              <ReferenceLine y={90} stroke="#f87171" strokeDasharray="4 2"
+                label={{ value: '90%', fill: '#f87171', fontSize: 10, position: 'right' }} />
               <Line
-                type="monotone"
-                dataKey="stress"
-                stroke="#7c3aed"
-                strokeWidth={2}
-                dot={false}
-                isAnimationActive={false}
+                type="monotone" dataKey="stress" stroke="#7c3aed"
+                strokeWidth={2} dot={false} isAnimationActive={false}
               />
             </LineChart>
           </ResponsiveContainer>
         )}
       </div>
 
-      {/* 2. Секция эпизодов */}
       <div className="w-full rounded-xl p-5 border" style={{ background: '#1a1d27', borderColor: '#222638' }}>
         <p className="text-sm font-semibold text-white mb-4">Episodes</p>
 
@@ -105,9 +99,9 @@ export function ParentDashboard() {
             {episodes.map((ep) => (
               <li key={ep.id} className="rounded-xl p-4 border" style={{ background: '#0f1117', borderColor: '#222638' }}>
                 <div className="flex justify-between items-start mb-2">
-                  <span className="text-sm font-semibold text-white">{formatTime(ep.started_at)}</span>
+                  <span className="text-sm font-semibold text-white">{formatTime(ep.start_time)}</span>
                   <div className="flex gap-2 text-xs" style={{ color: '#64748b' }}>
-                    <span>{ep.duration_sec}с</span>
+                    <span>{ep.duration_sec}s</span>
                     <span>·</span>
                     <span>peak {ep.peak_stress}%</span>
                     <span>·</span>

@@ -2,209 +2,188 @@ import asyncio
 import json
 import os
 from contextlib import asynccontextmanager
+from datetime import datetime, timezone
 from typing import Any
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
-from fastapi.responses import Response
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from data_source import create_data_source, SimulatorSource
-from stress_engine import calculate_stress
+from data_source import get_data_source, SimulatorSource
+from stress_engine import StressEngine
+from episode_logger import EpisodeLogger
 
 load_dotenv()
 
-# ── глобальное состояние ────────────────────────────────────────────────────
+# ── state ────────────────────────────────────────────────────────────────────
 
-data_source = create_data_source()
 connections: list[WebSocket] = []
+last_payload: dict[str, Any] = {}
+engine = StressEngine()
+logger = EpisodeLogger()
 
-# Текущий эпизод (stress >= 90 подряд)
 episode_active = False
 episode_peak = 0
-episode_start_time: float | None = None
+episode_bpm_sum = 0.0
+episode_ticks = 0
+episode_start: str = ""
+_rising_task: asyncio.Task | None = None
 
-# Текущий уровень стресса для /status
-last_stress: dict[str, Any] = {}
+# ── broadcast ─────────────────────────────────────────────────────────────────
 
-
-# ── WebSocket-менеджер ──────────────────────────────────────────────────────
-
-async def broadcast(message: dict) -> None:
+async def broadcast(msg: dict) -> None:
     dead = []
     for ws in connections:
         try:
-            await ws.send_text(json.dumps(message))
+            await ws.send_text(json.dumps(msg))
         except Exception:
             dead.append(ws)
     for ws in dead:
         connections.remove(ws)
 
+# ── episode tracking ──────────────────────────────────────────────────────────
 
-# ── фоновый цикл трансляции ─────────────────────────────────────────────────
+async def _handle_episode(result, bpm: float) -> None:
+    global episode_active, episode_peak, episode_bpm_sum, episode_ticks, episode_start
+
+    if result.alert and not episode_active:
+        episode_active = True
+        episode_peak = result.stress
+        episode_bpm_sum = bpm
+        episode_ticks = 1
+        episode_start = datetime.now(timezone.utc).isoformat()
+
+    elif episode_active:
+        if result.stress > episode_peak:
+            episode_peak = result.stress
+        episode_bpm_sum += bpm
+        episode_ticks += 1
+
+        if not result.alert:
+            end = datetime.now(timezone.utc).isoformat()
+            duration = episode_ticks
+            avg_bpm = episode_bpm_sum / episode_ticks
+            peak = episode_peak
+            start = episode_start
+            episode_active = False
+            asyncio.create_task(_close_episode(start, end, peak, avg_bpm, duration))
+
+async def _close_episode(start: str, end: str, peak: int, avg_bpm: float, duration: int) -> None:
+    episode_id = await logger.log_episode(start, end, peak, avg_bpm, duration)
+    episode = await logger.get_episode(episode_id)
+    if episode:
+        from claude_client import analyze_episode
+        analysis = await analyze_episode(episode)
+        if analysis:
+            await logger.save_analysis(episode_id, analysis)
+
+# ── broadcast loop ────────────────────────────────────────────────────────────
 
 async def broadcast_loop() -> None:
-    global episode_active, episode_peak, episode_start_time
-
-    await data_source.start()
-
-    async for reading in data_source.stream():
-        result = calculate_stress(reading)
-
-        source_name = os.getenv("DATA_SOURCE", "simulator")
+    ds = get_data_source()
+    await ds.start()
+    async for reading in ds.stream():
+        result = engine.calculate(reading.bpm, reading.rr_intervals)
         payload = {
             "bpm": result.bpm,
             "stress": result.stress,
             "rr_intervals": reading.rr_intervals,
             "rmssd": result.rmssd,
-            "source": source_name,
+            "source": os.getenv("DATA_SOURCE", "simulator"),
             "alert": result.alert,
         }
-        last_stress.update(payload)
-
+        last_payload.update(payload)
         await broadcast(payload)
-        _track_episode(result)
+        await _handle_episode(result, reading.bpm)
 
-
-def _track_episode(result) -> None:
-    """Фиксирует начало/конец эпизода для последующего логирования."""
-    global episode_active, episode_peak, episode_start_time
-    import time
-
-    if result.alert and not episode_active:
-        episode_active = True
-        episode_peak = result.stress
-        episode_start_time = time.time()
-    elif episode_active:
-        if result.stress > episode_peak:
-            episode_peak = result.stress
-        if not result.alert:
-            # эпизод закончился
-            episode_active = False
-            duration = int(time.time() - (episode_start_time or 0))
-            asyncio.create_task(_close_episode(duration, episode_peak))
-
-
-async def _close_episode(duration: int, peak: int) -> None:
-    """Сохраняет эпизод и запрашивает анализ (реализуется в Step 11)."""
-    try:
-        from episode_logger import log_episode
-        from openai_client import analyze_episode
-        episode_id = await log_episode(duration=duration, peak_stress=peak, avg_bpm=last_stress.get("bpm", 0))
-        await analyze_episode(episode_id)
-    except ImportError:
-        pass  # episode_logger/openai_client ещё не реализованы
-
-
-# ── lifespan ────────────────────────────────────────────────────────────────
+# ── lifespan ──────────────────────────────────────────────────────────────────
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     task = asyncio.create_task(broadcast_loop())
     yield
     task.cancel()
-    await data_source.stop()
+    ds = get_data_source()
+    await ds.stop()
 
-
-# ── приложение ───────────────────────────────────────────────────────────────
+# ── app ───────────────────────────────────────────────────────────────────────
 
 app = FastAPI(title="NeuroPulse", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
-    allow_credentials=False,
 )
 
-
-# ── explicit OPTIONS preflight for all routes ────────────────────────────────
-
-@app.options("/{rest_of_path:path}")
-async def preflight(rest_of_path: str, request: Request) -> Response:
-    return Response(
-        status_code=200,
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-        },
-    )
-
-
-# ── WebSocket endpoint ───────────────────────────────────────────────────────
+# ── websocket ─────────────────────────────────────────────────────────────────
 
 @app.websocket("/ws")
-async def websocket_endpoint(ws: WebSocket) -> None:
+async def ws_endpoint(ws: WebSocket) -> None:
     await ws.accept()
     connections.append(ws)
+    if last_payload:
+        await ws.send_text(json.dumps(last_payload))
     try:
         while True:
-            await ws.receive_text()  # держим соединение живым
+            await ws.receive_text()
     except WebSocketDisconnect:
-        connections.remove(ws)
+        if ws in connections:
+            connections.remove(ws)
 
+# ── demo endpoints ────────────────────────────────────────────────────────────
 
-# ── demo endpoints ───────────────────────────────────────────────────────────
-
-def _get_simulator() -> SimulatorSource:
-    if not isinstance(data_source, SimulatorSource):
-        raise HTTPException(status_code=400, detail="Demo-эндпоинты доступны только в режиме simulator")
-    return data_source
-
+def _sim() -> SimulatorSource:
+    ds = get_data_source()
+    if not isinstance(ds, SimulatorSource):
+        raise HTTPException(400, "Demo endpoints only available in simulator mode")
+    return ds
 
 @app.post("/demo/stress/{level}")
 async def set_stress(level: float) -> dict:
-    sim = _get_simulator()
-    sim.set_stress(level)
+    _sim().set_stress(level)
     return {"stress_level": level}
-
 
 @app.post("/demo/scenario/rising")
 async def scenario_rising() -> dict:
-    """Плавный подъём стресса 0 → 1 за 30 секунд."""
-    sim = _get_simulator()
+    global _rising_task
+    if _rising_task and not _rising_task.done():
+        _rising_task.cancel()
 
+    sim = _sim()
     async def _ramp():
-        steps = 30
-        for i in range(steps + 1):
-            sim.set_stress(i / steps)
+        for i in range(31):
+            sim.set_stress(i / 30)
             await asyncio.sleep(1)
-
-    asyncio.create_task(_ramp())
+    _rising_task = asyncio.create_task(_ramp())
     return {"scenario": "rising", "duration_sec": 30}
-
 
 @app.post("/demo/scenario/reset")
 async def scenario_reset() -> dict:
-    sim = _get_simulator()
-    sim.set_stress(0.0)
+    global _rising_task
+    if _rising_task and not _rising_task.done():
+        _rising_task.cancel()
+    _sim().set_stress(0.0)
     return {"scenario": "reset"}
 
-
-# ── episode endpoints (заглушки до Step 11) ──────────────────────────────────
+# ── episode endpoints ─────────────────────────────────────────────────────────
 
 @app.get("/episodes")
 async def get_episodes() -> list:
-    try:
-        from episode_logger import get_last_episodes
-        return await get_last_episodes(limit=20)
-    except ImportError:
-        return []
-
+    return await logger.get_episodes(limit=20)
 
 @app.get("/episodes/{episode_id}/analysis")
 async def get_episode_analysis(episode_id: int) -> dict:
-    try:
-        from episode_logger import get_analysis
-        result = await get_analysis(episode_id)
-        if result is None:
-            raise HTTPException(status_code=404, detail="Анализ не найден")
-        return result
-    except ImportError:
-        raise HTTPException(status_code=503, detail="episode_logger ещё не реализован")
+    ep = await logger.get_episode(episode_id)
+    if not ep:
+        raise HTTPException(404, "Episode not found")
+    if not ep.get("analysis"):
+        raise HTTPException(404, "Analysis not available yet")
+    return ep["analysis"]
 
+# ── entrypoint ────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     import uvicorn
